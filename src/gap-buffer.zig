@@ -87,9 +87,10 @@ pub fn GapBuffer(comptime T: type) type {
                 }
                 this.buffer[index] = Item{ .item = value };
                 this.gap_start += 1;
-            }
-            if (this.gap_end == 0) {
-                try this.grow_gap();
+                index += 1;
+                if (this.gap_end == 0) {
+                    try this.grow_gap();
+                }
             }
         }
         pub fn move_gap_left(this: *Self, position: usize) void {
@@ -116,4 +117,30 @@ test "test init" {
     try buffer.insert(&[_]i32{ 1, 2, 3 }, 3, 0);
     try std.testing.expectEqual(@as(i32, 1), buffer.buffer[0].item);
     try std.testing.expectEqual(@as(i32, 2), buffer.buffer[1].item);
+}
+
+test "test insert" {
+    var buffer = try GapBuffer(i32).init(&std.testing.allocator, 10);
+    defer buffer.deinit();
+    try buffer.insert(&[_]i32{ 1, 2, 3 }, 3, 0);
+    try buffer.insert(&[_]i32{ 4, 5, 6 }, 3, 3);
+    try std.testing.expectEqual(@as(i32, 1), buffer.buffer[0].item);
+    try std.testing.expectEqual(@as(i32, 2), buffer.buffer[1].item);
+    try std.testing.expectEqual(@as(i32, 3), buffer.buffer[2].item);
+    try std.testing.expectEqual(@as(i32, 4), buffer.buffer[3].item);
+    try std.testing.expectEqual(@as(i32, 5), buffer.buffer[4].item);
+    try std.testing.expectEqual(@as(i32, 6), buffer.buffer[5].item);
+}
+
+test "test insert resize" {
+    var buffer = try GapBuffer(i32).init(&std.testing.allocator, 3);
+    defer buffer.deinit();
+    try buffer.insert(&[_]i32{ 1, 2, 3 }, 3, 0);
+    try buffer.insert(&[_]i32{ 4, 5, 6 }, 3, 3);
+    try std.testing.expectEqual(@as(i32, 1), buffer.buffer[0].item);
+    try std.testing.expectEqual(@as(i32, 2), buffer.buffer[1].item);
+    try std.testing.expectEqual(@as(i32, 3), buffer.buffer[2].item);
+    try std.testing.expectEqual(@as(i32, 4), buffer.buffer[3].item);
+    try std.testing.expectEqual(@as(i32, 5), buffer.buffer[4].item);
+    try std.testing.expectEqual(@as(i32, 6), buffer.buffer[5].item);
 }
